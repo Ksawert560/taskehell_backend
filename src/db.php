@@ -22,17 +22,26 @@ class Database {
         );
 
         if ($this->conn->connect_error) {
-            die("Connection failed: " . $this->conn->connect_error);
+            http_response_code(500);
+            echo json_encode(["success" => false, "error" => "Connection failed: " . $this->conn->connect_error]);
+            exit;
         }
-
-        echo "Connected successfully";
     }
 
     public function disconnect() {
         if ($this->conn) {
             $this->conn->close();
-            echo "Disconnected successfully";
         }
+    }
+
+    private function success($message) {
+        http_response_code(200);
+        echo json_encode(["success" => true, "message" => $message]);
+    }
+
+    private function error($message) {
+        http_response_code(400);
+        echo json_encode(["success" => false, "error" => $message]);
     }
 
     /* USERS */
@@ -41,79 +50,78 @@ class Database {
         $stmt->bind_param("ss", $username, $password);
 
         if ($stmt->execute()) {
-            echo "New user created successfully";
+            $user_id = $this->conn->insert_id;
+            http_response_code(201); // Created
+            echo json_encode([
+                "message" => "User created",
+                "user_id" => $user_id
+            ]);
         } else {
-            echo "Error: " . $stmt->error;
+            http_response_code(409); // Conflict (e.g., duplicate username)
+            echo json_encode(["error" => $stmt->error]);
         }
 
         $stmt->close();
     }
 
-    public function remove_user($username) {
-        $stmt = $this->conn->prepare("DELETE FROM users WHERE username = ?");
-        $stmt->bind_param("s", $username);
+    public function remove_user($id) {
+        $stmt = $this->conn->prepare("DELETE FROM users WHERE id = ?");
+        $stmt->bind_param("i", $id);
 
-        if ($stmt->execute()) {
-            echo "User removed successfully";
+        if ($stmt->execute() && $stmt->affected_rows > 0) {
+            http_response_code(200);
+            echo json_encode(["message" => "User removed"]);
         } else {
-            echo "Error: " . $stmt->error;
-        }
-
-        $stmt->close();
-    }
-
-    public function return_user_id($username) {
-        $stmt = $this->conn->prepare("SELECT id FROM users WHERE username = ?");
-        $stmt->bind_param("s", $username);
-        $stmt->execute();
-        $result = $stmt->get_result();
-
-        if ($row = $result->fetch_assoc()) {
-            return $row['id'];
-        } else {
-            echo "User not found";
-            return null;
+            http_response_code(404);
+            echo json_encode(["error" => "User not found"]);
         }
 
         $stmt->close();
     }
 
     /* TASKS */
-    public function register_task($user_id, $task, $due=null) {
-        $stmt = $this->conn->prepare("INSERT INTO tasks (user_id, task, due) VALUES (?, ?, ?)");
-        $stmt->bind_param("is", $user_id, $task, $due);
-
-        if ($stmt->execute()) {
-            echo "Task added successfully";
+    public function register_task($user_id, $task, $due = null) {
+        if ($due === null) {
+            // NULL directly in the SQL statement
+            $stmt = $this->conn->prepare("INSERT INTO tasks (user_id, task, due) VALUES (?, ?, NULL)");
+            $stmt->bind_param("is", $user_id, $task);
         } else {
-            echo "Error: " . $stmt->error;
+            // If due is provided
+            $stmt = $this->conn->prepare("INSERT INTO tasks (user_id, task, due) VALUES (?, ?, ?)");
+            $stmt->bind_param("iss", $user_id, $task, $due);
         }
-
+    
+        if ($stmt->execute()) {
+            http_response_code(201);
+            echo json_encode(["message" => "Task added"]);
+        } else {
+            http_response_code(400);
+            echo json_encode(["error" => $stmt->error]);
+        }
+    
         $stmt->close();
     }
 
     public function register_random_task($user_id) {
-        // Get random verb
         $verb_result = $this->conn->query("SELECT verb FROM verbs ORDER BY RAND() LIMIT 1");
         $verb = $verb_result->fetch_assoc()['verb'];
-    
-        // Get random noun
+
         $noun_result = $this->conn->query("SELECT noun FROM nouns ORDER BY RAND() LIMIT 1");
         $noun = $noun_result->fetch_assoc()['noun'];
-    
-        // Combine them into a task
-        $task = ucfirst($verb) . " " . $noun;
-    
-        // Insert task into tasks table
+
+        $task = ucfirst($verb) . " a " . $noun;
+
         $stmt = $this->conn->prepare("INSERT INTO tasks (user_id, task) VALUES (?, ?)");
         $stmt->bind_param("is", $user_id, $task);
-    
+
         if ($stmt->execute()) {
-            echo "Random task '{$task}' added successfully for user ID {$user_id}";
+            http_response_code(201);
+            echo json_encode(["message" => "Random task '{$task}' added"]);
         } else {
-            echo "Error: " . $stmt->error;
+            http_response_code(400);
+            echo json_encode(["error" => $stmt->error]);
         }
-    
+
         $stmt->close();
     }
 
@@ -121,10 +129,12 @@ class Database {
         $stmt = $this->conn->prepare("DELETE FROM tasks WHERE id = ? AND user_id = ?");
         $stmt->bind_param("ii", $task_id, $user_id);
 
-        if ($stmt->execute()) {
-            echo "Task removed successfully";
+        if ($stmt->execute() && $stmt->affected_rows > 0) {
+            http_response_code(200);
+            echo json_encode(["message" => "Task removed"]);
         } else {
-            echo "Error: " . $stmt->error;
+            http_response_code(404);
+            echo json_encode(["error" => "Task not found"]);
         }
 
         $stmt->close();
@@ -134,16 +144,18 @@ class Database {
         $stmt = $this->conn->prepare("UPDATE tasks SET finished = ? WHERE id = ?");
         $stmt->bind_param("ii", $state, $task_id);
 
-        if ($stmt->execute()) {
-            echo "Task state updated successfully";
+        if ($stmt->execute() && $stmt->affected_rows > 0) {
+            http_response_code(200);
+            echo json_encode(["message" => "Task updated"]);
         } else {
-            echo "Error: " . $stmt->error;
+            http_response_code(404);
+            echo json_encode(["error" => "Task not found"]);
         }
 
         $stmt->close();
     }
 
-    public function return_tasks($user_id, $state_filter=null) {
+    public function return_tasks($user_id, $state_filter = null) {
         if (is_null($state_filter)) {
             $stmt = $this->conn->prepare("SELECT * FROM tasks WHERE user_id = ?");
             $stmt->bind_param("i", $user_id);
@@ -158,9 +170,12 @@ class Database {
             while ($row = $result->fetch_assoc()) {
                 $tasks[] = $row;
             }
-            echo json_encode($tasks);
+
+            http_response_code(200);
+            echo json_encode(["tasks" => $tasks]);
         } else {
-            echo "Error: " . $stmt->error;
+            http_response_code(400);
+            echo json_encode(["error" => $stmt->error]);
         }
 
         $stmt->close();

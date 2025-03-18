@@ -1,0 +1,8 @@
+<LimitExcept GET POST OPTIONS PUT PATCH DELETE>
+    Deny from all
+</LimitExcept>
+
+RewriteEngine On
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^ index.php [QSA,L]
