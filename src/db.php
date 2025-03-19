@@ -109,6 +109,18 @@ class Database {
         $stmt->close();
     }
 
+    public function get_user_by_username($username) {
+        $stmt = $this->conn->prepare("SELECT id, username, password FROM users WHERE username = ? LIMIT 1");
+        $stmt->bind_param("s", $username);
+        $stmt->execute();
+        
+        $result = $stmt->get_result();
+        $user = $result->fetch_assoc();
+        
+        $stmt->close();
+        return $user;
+    }
+
     /* TASKS */
     public function register_task($user_id, $task, $due = null) {
         if ($due === null) {

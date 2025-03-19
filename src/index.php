@@ -13,12 +13,13 @@ $db = new Database(
     $_ENV['MYSQL_DATABASE'] ?? 'taskhell'
 );
 
+$pepper = $ENV['PEPPER'] ?? 'basicpepper';
 
 $db -> connect();
 
 $segments = return_segments();
 
-resolve_endpoints($segments, $db);
+resolve_endpoints($segments, $db, $pepper);
 
 $db -> disconnect();
 

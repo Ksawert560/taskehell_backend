@@ -1,6 +1,7 @@
 <?php
 require_once 'validation_rules.php'; 
 require "validator.php";
+require "security.php";
 
 
 function return_segments() {
@@ -10,16 +11,81 @@ function return_segments() {
     return explode('/', $uri);
 }
 
-function resolve_endpoints($segments, $db) {
+function resolve_endpoints($segments, $db, $pepper) {
     $VALIDATION_RULES = $GLOBALS['VALIDATION_RULES'];
     $method = $_SERVER['REQUEST_METHOD'];
 
-    if (!isset($segments[1]) || $segments[1] !== 'users') {
+    if (!isset($segments[1])) {
         http_response_code(404);
         echo json_encode(["error" => "Invalid endpoint"]);
         exit;
     }
 
+    switch($segments[1]) {
+        case 'users':
+            user_resources(
+                $segments,
+                $db,
+                $pepper,
+                $VALIDATION_RULES,
+                $method
+            );
+            break;
+        case 'login':
+            login($db, $pepper, $VALIDATION_RULES, $method);
+            break;
+        default:
+            http_response_code(404);
+            echo json_encode(["error" => "Invalid endpoint"]);
+            exit;
+            break;
+    }
+
+    
+}
+
+function login($db, $pepper, $VALIDATION_RULES, $method)
+{
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        http_response_code(404);
+        echo json_encode(["error" => "Invalid endpoint"]);
+        exit;
+    }
+
+    $data = json_decode(file_get_contents('php://input'), true);
+
+    $username = $data['username'] ?? null;
+    $password = $data['password'] ?? null;
+
+    if (!$username || !$password) {
+        http_response_code(400);
+        echo json_encode(['error' => 'Username and password required']);
+        exit;
+    }
+
+    $user = $db->get_user_by_username($username);
+
+    if (!$user || !isset($user['password']) || !is_string($user['password'])) {
+        http_response_code(401);
+        echo json_encode(['error' => 'Invalid credentials']);
+        exit;
+    }
+
+    // Pepper and verify
+    $pepperedPassword = hash_hmac("sha256", $password, $pepper);
+
+    if (password_verify($pepperedPassword, $user['password'])) {
+        http_response_code(200);
+        echo json_encode(['message' => 'Login successful']);
+    } else {
+        http_response_code(401);
+        echo json_encode(['error' => 'Invalid credentials']);
+    }
+    exit;
+}
+
+
+function user_resources($segments, $db, $pepper, $VALIDATION_RULES, $method) {
     $userID = isset($segments[2]) ? intval($segments[2]) : null;
 
     switch ($method) {
@@ -41,7 +107,8 @@ function resolve_endpoints($segments, $db) {
                 echo json_encode(['errors' => $errors]);
                 exit;
             } else {
-                $db -> register_user($username, $password);
+                $hashedPassword = hashPassword($password, $pepper); 
+                $db -> register_user($username, $hashedPassword);
             }
 
             break;
@@ -116,7 +183,8 @@ function resolve_endpoints($segments, $db) {
                         echo json_encode(['errors' => $errors]);
                         exit;
                     } else {
-                        $db -> update_user_password($userID, $data['password']);
+                        $hashedPassword = hashPassword($password, $pepper); 
+                        $db -> update_user_password($userID, $hashedPassword);
                     }
                 }
             } else if ($segments[3] === 'tasks' && isset($segments[4])) {
@@ -158,7 +226,7 @@ function resolve_endpoints($segments, $db) {
                 }
             }
             $db -> return_tasks($userID, $stateFilter);
-            
+
             break;
 
         default:
