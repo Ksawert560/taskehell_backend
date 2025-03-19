@@ -1,4 +1,7 @@
 <?php
+require_once 'validation_rules.php'; 
+require "validator.php";
+
 
 function return_segments() {
     $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
@@ -8,6 +11,7 @@ function return_segments() {
 }
 
 function resolve_endpoints($segments, $db) {
+    $VALIDATION_RULES = $GLOBALS['VALIDATION_RULES'];
     $method = $_SERVER['REQUEST_METHOD'];
 
     if (!isset($segments[1]) || $segments[1] !== 'users') {
@@ -23,17 +27,33 @@ function resolve_endpoints($segments, $db) {
             if ($userID) break;
 
             $data = json_decode(file_get_contents('php://input'), true);
-            $db->register_user($data['username'], $data['password']);
+
+            $username = $data['username'];
+            $password = $data['password'];
+
+            $usernameErrors = validate("Username", $username, $VALIDATION_RULES['username']);
+            $passwordErrors = validate("Password", $password, $VALIDATION_RULES['password']);
+
+            $errors = array_merge($usernameErrors, $passwordErrors);
+
+            if (!empty($errors)) {
+                http_response_code(400);
+                echo json_encode(['errors' => $errors]);
+                exit;
+            } else {
+                $db -> register_user($username, $password);
+            }
+
             break;
 
         case 'DELETE':
             if (!$userID) break;
 
             if (!isset($segments[3])) {
-                $db->remove_user($userID);
+                $db -> remove_user($userID);
             } else if ($segments[3] === 'tasks' && isset($segments[4])) {
                 $taskID = intval($segments[4]);
-                $db->remove_task($userID, $taskID);
+                $db -> remove_task($userID, $taskID);
             }
             break;
 
@@ -42,29 +62,103 @@ function resolve_endpoints($segments, $db) {
 
             if (!isset($segments[4])) {
                 $data = json_decode(file_get_contents('php://input'), true);
-                $db->register_task($userID, $data['task'], $data['due'] ?? null);
+
+                $task = $data['task'];
+                $date = $data['due'] ?? null;
+
+                $taskErrors = validate("Task", $task, $VALIDATION_RULES['task']);
+                
+                if(isset($date)) {
+                    $dateErrors = validate("Date", $date, $VALIDATION_RULES['datetime']);
+                    $errors = array_merge($taskErrors, $dateErrors);
+                } else {
+                    $errors = $taskErrors;
+                }
+
+
+                if (!empty($errors)) {
+                    http_response_code(400);
+                    echo json_encode(['errors' => $errors]);
+                    exit;
+                } else {
+                    $db -> register_task($userID, $task, $date ?? null);
+                }
+
             } elseif ($segments[4] === 'random') {
-                $db->register_random_task($userID);
+                $db -> register_random_task($userID);
             }
             break;
 
         case 'PATCH':
-            if (!$userID || $segments[3] !== 'tasks' || !isset($segments[4])) break;
+            if(!$userID) break;
 
-            $taskID = intval($segments[4]);
-            $data = json_decode(file_get_contents('php://input'), true);
-            $db->update_task($taskID, $data['finished']);
+            if(!isset($segments[3])) {
+                $data = json_decode(file_get_contents('php://input'), true);
+
+                $username = $data['username'] ?? null;
+                $password = $data['password'] ?? null;
+
+                if(isset($username)) {
+                    $errors = validate("Username", $username, $VALIDATION_RULES['username']);
+                
+                    if (!empty($errors)) {
+                        http_response_code(400);
+                        echo json_encode(['errors' => $errors]);
+                        exit;
+                    } else {
+                        $db -> update_user_username($userID, $username);
+                    }
+                } elseif (isset($password)) {
+                    $errors = validate("Password", $password, $VALIDATION_RULES['password']);
+                
+                    if (!empty($errors)) {
+                        http_response_code(400);
+                        echo json_encode(['errors' => $errors]);
+                        exit;
+                    } else {
+                        $db -> update_user_password($userID, $data['password']);
+                    }
+                }
+            } else if ($segments[3] === 'tasks' && isset($segments[4])) {
+                $taskID = intval($segments[4]);
+
+                $data = json_decode(file_get_contents('php://input'), true);
+                $finished = $data['finished'] ?? null;
+
+                if(isset($finished)) {
+                    $errors = validate("Finished", $finished, $VALIDATION_RULES['boolean']);
+                
+                    if (!empty($errors)) {
+                        http_response_code(400);
+                        echo json_encode(['errors' => $errors]);
+                        exit;
+                    } else {
+                        $db -> update_task($taskID, $finished);
+                    }
+                }
+            }
+
             break;
 
         case 'GET':
             if (!$userID || !isset($segments[3]) || $segments[3] !== 'tasks') break;
 
             $stateFilter = null;
-            if (isset($_GET['finished'])) {
-                $stateFilter = $_GET['finished'] === 'true' ? 1 : 0;
-            }
 
-            $db->return_tasks($userID, $stateFilter);
+            $finished = $_GET['finished'] ?? null;
+            if(isset($finished)) {
+                $errors = validate("Finished", $finished, $VALIDATION_RULES['boolean']);
+            
+                if (!empty($errors)) {
+                    http_response_code(400);
+                    echo json_encode(['errors' => $errors]);
+                    exit;
+                } else {
+                    $stateFilter = $finished === 'true' ? 1 : 0;
+                }
+            }
+            $db -> return_tasks($userID, $stateFilter);
+            
             break;
 
         default:

@@ -79,6 +79,36 @@ class Database {
         $stmt->close();
     }
 
+    public function update_user_username($id, $username) {
+        $stmt = $this -> conn -> prepare("UPDATE users SET username = ? WHERE id = ?");
+        $stmt->bind_param("si", $username, $id);
+
+        if ($stmt->execute() && $stmt->affected_rows > 0) {
+            http_response_code(200);
+            echo json_encode(["message" => "User updated"]);
+        } else {
+            http_response_code(404);
+            echo json_encode(["error" => "User not found"]);
+        }
+
+        $stmt->close();
+    }
+
+    public function update_user_password($id, $password) {
+        $stmt = $this -> conn -> prepare("UPDATE users SET password = ? WHERE id = ?");
+        $stmt->bind_param("si", $password, $id);
+
+        if ($stmt->execute() && $stmt->affected_rows > 0) {
+            http_response_code(200);
+            echo json_encode(["message" => "User updated"]);
+        } else {
+            http_response_code(404);
+            echo json_encode(["error" => "User not found"]);
+        }
+
+        $stmt->close();
+    }
+
     /* TASKS */
     public function register_task($user_id, $task, $due = null) {
         if ($due === null) {
