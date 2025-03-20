@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: mysql
--- Generation Time: Mar 17, 2025 at 11:17 PM
+-- Generation Time: Mar 20, 2025 at 06:27 PM
 -- Server version: 8.0.41
 -- PHP Version: 8.2.27
 
@@ -20,19 +20,33 @@ SET time_zone = "+00:00";
 --
 -- Database: `taskhell`
 --
-CREATE DATABASE IF NOT EXISTS `taskhell` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;
-USE `taskhell`;
 
 -- --------------------------------------------------------
 
 --
--- Table structure for table `noun`
+-- Table structure for table `nouns`
 --
 
-CREATE TABLE `noun` (
+CREATE TABLE `nouns` (
   `id` bigint UNSIGNED NOT NULL,
   `noun` varchar(150) COLLATE utf8mb4_general_ci NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `nouns`
+--
+
+INSERT INTO `nouns` (`id`, `noun`) VALUES
+(21, 'chair'),
+(22, 'phone'),
+(23, 'cup'),
+(24, 'desk'),
+(25, 'glass'),
+(26, 'key'),
+(27, 'pen'),
+(28, 'shirt'),
+(29, 'plate'),
+(30, 'wallet');
 
 -- --------------------------------------------------------
 
@@ -44,9 +58,17 @@ CREATE TABLE `tasks` (
   `id` bigint UNSIGNED NOT NULL,
   `user_id` bigint UNSIGNED NOT NULL,
   `task` varchar(512) COLLATE utf8mb4_general_ci NOT NULL,
-  `due` datetime NOT NULL,
+  `due` datetime DEFAULT NULL,
   `finished` tinyint(1) NOT NULL DEFAULT '0'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `tasks`
+--
+
+INSERT INTO `tasks` (`id`, `user_id`, `task`, `due`, `finished`) VALUES
+(9, 6, 'do homework', NULL, 0),
+(10, 19, 'Organize a plate', NULL, 1);
 
 -- --------------------------------------------------------
 
@@ -60,25 +82,61 @@ CREATE TABLE `users` (
   `password` varchar(256) COLLATE utf8mb4_general_ci NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+--
+-- Dumping data for table `users`
+--
+
+INSERT INTO `users` (`id`, `username`, `password`) VALUES
+(6, 'Bob', 'Bob'),
+(7, 'Tonny', 'password'),
+(8, 'Ton_ny', 'password'),
+(9, 'Bonnie', 'P4$$word'),
+(10, 'Bonnie2', 'P4$$word'),
+(12, 'Bonnie3', 'P4$$word'),
+(13, 'Bonnie5', 'P4$$word'),
+(14, 'Bonnie7', 'P4$$word'),
+(15, 'Bonnie8', 'P4$$word'),
+(16, 'Bonnie9', 'P4$$word'),
+(17, 'Bonnie10', 'P4$$word'),
+(18, 'Bonnie11', 'P4$$word'),
+(19, 'Bonnie12', 'P4*$word'),
+(20, 'Gimbo12', '$argon2id$v=19$m=65536,t=4,p=1$aWRtWmhPYkRWc2twMjFWYg$nw8Upps7yfbsH5kRNzMJE1Ej8BuftzsrBvl077QQ7qU');
+
 -- --------------------------------------------------------
 
 --
--- Table structure for table `verb`
+-- Table structure for table `verbs`
 --
 
-CREATE TABLE `verb` (
+CREATE TABLE `verbs` (
   `id` bigint NOT NULL,
   `verb` varchar(150) COLLATE utf8mb4_general_ci NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `verbs`
+--
+
+INSERT INTO `verbs` (`id`, `verb`) VALUES
+(1, 'clean'),
+(2, 'hide'),
+(3, 'check'),
+(4, 'find'),
+(5, 'move'),
+(6, 'go out with'),
+(7, 'rotate'),
+(8, 'don\'t think about'),
+(9, 'wash'),
+(10, 'organize');
 
 --
 -- Indexes for dumped tables
 --
 
 --
--- Indexes for table `noun`
+-- Indexes for table `nouns`
 --
-ALTER TABLE `noun`
+ALTER TABLE `nouns`
   ADD PRIMARY KEY (`id`);
 
 --
@@ -96,9 +154,9 @@ ALTER TABLE `users`
   ADD UNIQUE KEY `id` (`username`);
 
 --
--- Indexes for table `verb`
+-- Indexes for table `verbs`
 --
-ALTER TABLE `verb`
+ALTER TABLE `verbs`
   ADD PRIMARY KEY (`id`);
 
 --
@@ -106,28 +164,28 @@ ALTER TABLE `verb`
 --
 
 --
--- AUTO_INCREMENT for table `noun`
+-- AUTO_INCREMENT for table `nouns`
 --
-ALTER TABLE `noun`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT;
+ALTER TABLE `nouns`
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=31;
 
 --
 -- AUTO_INCREMENT for table `tasks`
 --
 ALTER TABLE `tasks`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
 
 --
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=21;
 
 --
--- AUTO_INCREMENT for table `verb`
+-- AUTO_INCREMENT for table `verbs`
 --
-ALTER TABLE `verb`
-  MODIFY `id` bigint NOT NULL AUTO_INCREMENT;
+ALTER TABLE `verbs`
+  MODIFY `id` bigint NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
 
 --
 -- Constraints for dumped tables
@@ -137,7 +195,7 @@ ALTER TABLE `verb`
 -- Constraints for table `tasks`
 --
 ALTER TABLE `tasks`
-  ADD CONSTRAINT `usertasks_FK` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`);
+  ADD CONSTRAINT `fk_user_task` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
