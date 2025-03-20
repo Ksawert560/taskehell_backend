@@ -84,7 +84,6 @@ function login($db, $pepper, $VALIDATION_RULES, $method)
     exit;
 }
 
-
 function user_resources($segments, $db, $pepper, $VALIDATION_RULES, $method) {
     $userID = isset($segments[2]) ? intval($segments[2]) : null;
 
