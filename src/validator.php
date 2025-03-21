@@ -16,7 +16,7 @@ function validate($field, $value, $rules = []) {
                 $errors[] = "$field must be at least $min characters";
             }
         } elseif (strpos($rule, 'regex:') === 0) {
-            $pattern = substr($rule, 6); // strip 'regex:' prefix
+            $pattern = substr($rule, 6);
             if (!preg_match($pattern, $value)) {
                 $errors[] = "$field format is invalid.";
             }
@@ -39,7 +39,6 @@ function validate($field, $value, $rules = []) {
             }
         } elseif ($rule === 'boolean') {
             if (!is_bool($value)) {
-                // Allow also "0"/"1" or "true"/"false" as strings
                 if (!in_array($value, [0, 1, "0", "1", "true", "false"], true)) {
                     $errors[] = "$field must be a boolean (true/false).";
                 }

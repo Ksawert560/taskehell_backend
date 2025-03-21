@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: mysql
--- Generation Time: Mar 20, 2025 at 06:27 PM
+-- Generation Time: Mar 21, 2025 at 01:10 AM
 -- Server version: 8.0.41
 -- PHP Version: 8.2.27
 
@@ -62,14 +62,6 @@ CREATE TABLE `tasks` (
   `finished` tinyint(1) NOT NULL DEFAULT '0'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
---
--- Dumping data for table `tasks`
---
-
-INSERT INTO `tasks` (`id`, `user_id`, `task`, `due`, `finished`) VALUES
-(9, 6, 'do homework', NULL, 0),
-(10, 19, 'Organize a plate', NULL, 1);
-
 -- --------------------------------------------------------
 
 --
@@ -81,26 +73,6 @@ CREATE TABLE `users` (
   `username` varchar(256) COLLATE utf8mb4_general_ci NOT NULL,
   `password` varchar(256) COLLATE utf8mb4_general_ci NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `users`
---
-
-INSERT INTO `users` (`id`, `username`, `password`) VALUES
-(6, 'Bob', 'Bob'),
-(7, 'Tonny', 'password'),
-(8, 'Ton_ny', 'password'),
-(9, 'Bonnie', 'P4$$word'),
-(10, 'Bonnie2', 'P4$$word'),
-(12, 'Bonnie3', 'P4$$word'),
-(13, 'Bonnie5', 'P4$$word'),
-(14, 'Bonnie7', 'P4$$word'),
-(15, 'Bonnie8', 'P4$$word'),
-(16, 'Bonnie9', 'P4$$word'),
-(17, 'Bonnie10', 'P4$$word'),
-(18, 'Bonnie11', 'P4$$word'),
-(19, 'Bonnie12', 'P4*$word'),
-(20, 'Gimbo12', '$argon2id$v=19$m=65536,t=4,p=1$aWRtWmhPYkRWc2twMjFWYg$nw8Upps7yfbsH5kRNzMJE1Ej8BuftzsrBvl077QQ7qU');
 
 -- --------------------------------------------------------
 
@@ -173,13 +145,13 @@ ALTER TABLE `nouns`
 -- AUTO_INCREMENT for table `tasks`
 --
 ALTER TABLE `tasks`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
 
 --
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=21;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=35;
 
 --
 -- AUTO_INCREMENT for table `verbs`

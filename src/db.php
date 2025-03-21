@@ -7,104 +7,82 @@ class Database {
     protected $conn;
 
     function __construct($db_host, $db_user, $db_pass, $db_name) {
-        $this->host = $db_host;
-        $this->user = $db_user;
-        $this->pass = $db_pass;
-        $this->name = $db_name;
+        $this -> host = $db_host;
+        $this -> user = $db_user;
+        $this -> pass = $db_pass;
+        $this -> name = $db_name;
     }
 
     public function connect() {
-        $this->conn = new mysqli(
-            $this->host,
-            $this->user,
-            $this->pass,
-            $this->name
+        $this -> conn = new mysqli(
+            $this -> host,
+            $this -> user,
+            $this -> pass,
+            $this -> name
         );
 
-        if ($this->conn->connect_error) {
-            http_response_code(500);
-            echo json_encode(["success" => false, "error" => "Connection failed: " . $this->conn->connect_error]);
-            exit;
-        }
+        if ($this -> conn -> connect_error) 
+            sendResponse(
+                500,
+                [
+                    "success" => false,
+                    "error" => "Connection failed: " . $this -> conn -> connect_error
+                ]
+            );
     }
 
     public function disconnect() {
-        if ($this->conn) {
-            $this->conn->close();
+        if ($this -> conn) {
+            $this -> conn -> close();
         }
-    }
-
-    private function success($message) {
-        http_response_code(200);
-        echo json_encode(["success" => true, "message" => $message]);
-    }
-
-    private function error($message) {
-        http_response_code(400);
-        echo json_encode(["success" => false, "error" => $message]);
     }
 
     /* USERS */
     public function register_user($username, $password){
-        $stmt = $this->conn->prepare("INSERT INTO users (username, password) VALUES (?, ?)");
-        $stmt->bind_param("ss", $username, $password);
+        $stmt = $this -> conn -> prepare("INSERT INTO users (username, password) VALUES (?, ?)");
+        $stmt -> bind_param("ss", $username, $password);
 
-        if ($stmt->execute()) {
-            $user_id = $this->conn->insert_id;
-            http_response_code(201); // Created
-            echo json_encode([
-                "message" => "User created",
+        if ($stmt -> execute()) {
+            $user_id = $this -> conn -> insert_id;
+            sendResponse(201, [
+                "message" => "Resource created",
                 "user_id" => $user_id
-            ]);
-        } else {
-            http_response_code(409); // Conflict (e.g., duplicate username)
-            echo json_encode(["error" => $stmt->error]);
-        }
+            ], false);
+        } else
+            sendResponse(409, ["error" => $stmt->error], false);
 
-        $stmt->close();
+        $stmt -> close();
     }
 
     public function remove_user($id) {
-        $stmt = $this->conn->prepare("DELETE FROM users WHERE id = ?");
-        $stmt->bind_param("i", $id);
+        $stmt = $this -> conn -> prepare("DELETE FROM users WHERE id = ?");
+        $stmt -> bind_param("i", $id);
 
-        if ($stmt->execute() && $stmt->affected_rows > 0) {
-            http_response_code(200);
-            echo json_encode(["message" => "User removed"]);
-        } else {
-            http_response_code(404);
-            echo json_encode(["error" => "User not found"]);
-        }
+        if ($stmt -> execute() && $stmt -> affected_rows > 0) 
+            sendResponse(200, ["message" => "Resource removed"], false);
+        else sendResponse('Resource not found', $exit = false);
 
-        $stmt->close();
+        $stmt -> close();
     }
 
     public function update_user_username($id, $username) {
         $stmt = $this -> conn -> prepare("UPDATE users SET username = ? WHERE id = ?");
-        $stmt->bind_param("si", $username, $id);
+        $stmt -> bind_param("si", $username, $id);
 
-        if ($stmt->execute() && $stmt->affected_rows > 0) {
-            http_response_code(200);
-            echo json_encode(["message" => "User updated"]);
-        } else {
-            http_response_code(404);
-            echo json_encode(["error" => "User not found"]);
-        }
+        if ($stmt -> execute() && $stmt -> affected_rows > 0)
+            sendResponse(200, ["message" => "Resource updated"], false);
+        else sendResponse('Resource not found', $exit = false);
 
-        $stmt->close();
+        $stmt -> close();
     }
 
     public function update_user_password($id, $password) {
         $stmt = $this -> conn -> prepare("UPDATE users SET password = ? WHERE id = ?");
-        $stmt->bind_param("si", $password, $id);
+        $stmt -> bind_param("si", $password, $id);
 
-        if ($stmt->execute() && $stmt->affected_rows > 0) {
-            http_response_code(200);
-            echo json_encode(["message" => "User updated"]);
-        } else {
-            http_response_code(404);
-            echo json_encode(["error" => "User not found"]);
-        }
+        if ($stmt->execute() && $stmt->affected_rows > 0) 
+            sendResponse(200, ["message" => "Resource updated"], false);
+        else sendResponse('Resource not found', $exit = false);
 
         $stmt->close();
     }
@@ -124,22 +102,15 @@ class Database {
     /* TASKS */
     public function register_task($user_id, $task, $due = null) {
         if ($due === null) {
-            // NULL directly in the SQL statement
             $stmt = $this->conn->prepare("INSERT INTO tasks (user_id, task, due) VALUES (?, ?, NULL)");
             $stmt->bind_param("is", $user_id, $task);
         } else {
-            // If due is provided
             $stmt = $this->conn->prepare("INSERT INTO tasks (user_id, task, due) VALUES (?, ?, ?)");
             $stmt->bind_param("iss", $user_id, $task, $due);
         }
     
-        if ($stmt->execute()) {
-            http_response_code(201);
-            echo json_encode(["message" => "Task added"]);
-        } else {
-            http_response_code(400);
-            echo json_encode(["error" => $stmt->error]);
-        }
+        if ($stmt->execute()) sendResponse(201, "Resource created", false);
+        else sendResponse($stmt -> $error, $exit = false);
     
         $stmt->close();
     }
@@ -156,13 +127,8 @@ class Database {
         $stmt = $this->conn->prepare("INSERT INTO tasks (user_id, task) VALUES (?, ?)");
         $stmt->bind_param("is", $user_id, $task);
 
-        if ($stmt->execute()) {
-            http_response_code(201);
-            echo json_encode(["message" => "Random task '{$task}' added"]);
-        } else {
-            http_response_code(400);
-            echo json_encode(["error" => $stmt->error]);
-        }
+        if ($stmt->execute()) sendResponse(201, "Resource created", false); 
+        else sendResponse($stmt -> $error, $exit = false);
 
         $stmt->close();
     }
@@ -171,28 +137,31 @@ class Database {
         $stmt = $this->conn->prepare("DELETE FROM tasks WHERE id = ? AND user_id = ?");
         $stmt->bind_param("ii", $task_id, $user_id);
 
-        if ($stmt->execute() && $stmt->affected_rows > 0) {
-            http_response_code(200);
-            echo json_encode(["message" => "Task removed"]);
-        } else {
-            http_response_code(404);
-            echo json_encode(["error" => "Task not found"]);
-        }
+        if ($stmt->execute() && $stmt->affected_rows > 0) 
+            sendResponse(200, ["message" => "Resource removed"], false);
+        else sendResponse("Resource not found", $exit=false);
 
         $stmt->close();
     }
 
-    public function update_task($task_id, $state) {
+    public function update_task_state($task_id, $state) {
         $stmt = $this->conn->prepare("UPDATE tasks SET finished = ? WHERE id = ?");
         $stmt->bind_param("ii", $state, $task_id);
 
-        if ($stmt->execute() && $stmt->affected_rows > 0) {
-            http_response_code(200);
-            echo json_encode(["message" => "Task updated"]);
-        } else {
-            http_response_code(404);
-            echo json_encode(["error" => "Task not found"]);
-        }
+        if ($stmt->execute() && $stmt->affected_rows > 0) 
+            sendResponse(200, ["message" => "Resource updated"], false);
+        else sendResponse("Resources not found", $exit=false);
+
+        $stmt->close();
+    }
+
+    public function update_task_content($task_id, $task) {
+        $stmt = $this->conn->prepare("UPDATE tasks SET task = ? WHERE id = ?");
+        $stmt->bind_param("is", $state, $task);
+
+        if ($stmt->execute() && $stmt->affected_rows > 0) 
+            sendResponse(200, ["message" => "Resource updated"], false);
+        else sendResponse("Resources not found", $exit=false);
 
         $stmt->close();
     }
@@ -213,12 +182,8 @@ class Database {
                 $tasks[] = $row;
             }
 
-            http_response_code(200);
-            echo json_encode(["tasks" => $tasks]);
-        } else {
-            http_response_code(400);
-            echo json_encode(["error" => $stmt->error]);
-        }
+            sendResponse(200, ["tasks" => $tasks], false);
+        } else sendResponse(400, ["error" => $stmt->error], false);
 
         $stmt->close();
     }
