@@ -1,0 +1,76 @@
+= Taskhell Backend
+:author: Ksawery Kucz, Miłosz Skubarczewski, Jakub Testka
+:revdate: 2025-03-21
+:toc: left
+
+== Description
+
+This is the **backend** for the **Taskhell** project, developed as part of the 'Internet Technologies' labs. The backend is built using PHP and provides a RESTful API for managing tasks.
+
+== Features
+
+* REST API for task management
+* User authentication with basic security practices
+* Input validation
+* Dockerized setup with PHP, MySQL, and phpMyAdmin services
+
+== Technologies Used
+
+* PHP
+* MySQL
+* Docker
+* Apache (via dockerized PHP service)
+
+== Setup
+
+=== Prerequisites
+
+* Docker
+
+=== Environment Variables
+
+Create a `.env` file by following the structure provided in `example.env`.  
+Remember to set secure values for:
+
+* `MYSQL_ROOT_PASSWORD`
+* `MYSQL_USER_PASSWORD`
+* `PEPPER`
+
+=== Build and Run
+
+[source,bash]
+----
+docker compose up
+----
+
+The services will be available on the ports defined in your `.env` file.  
+Proposed ports are:
+
+* `8080` for the API
+* `8081` for phpMyAdmin
+
+== API Endpoints
+
+You will find all the available routes and logic in `endpoints.php`:
+
+* `PUT /users` → User registration
+* `POST /login` → Credentials validation
+* `POST /users/:userID/tasks` → Task registration
+* `POST /users/:userID/tasks/random` → Random task registration
+* `PATCH /users/:userID` → User data update
+* `PATCH /users/:userID/tasks/:taskID` → Task data update
+* `GET /users/:userID/tasks?finished=[true/false]` → Return all user tasks (filtered by status)
+* `DELETE /users/:userID` → User removal
+* `DELETE /users/:userID/tasks/:taskID` → Task removal
+
+== Notes
+
+* The backend includes basic input validation and security mechanisms.
+* For development purposes, phpMyAdmin is available to browse and manage the database.
+* This project is intended for educational use and may require additional security hardening for production.
+
+== Authors
+
+* Ksawery Kucz
+* Miłosz Skubarczewski
+* Jakub Testka
