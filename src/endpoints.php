@@ -190,11 +190,11 @@ function task_update($db, $taskID, $VALIDATION_RULES) {
     if (!empty($errors)) sendResponse($errors);
     else {
         if(isset($task)) {
-            $db -> update_task($taskID, $task);
+            $db -> update_task_content($taskID, $task);
         }
 
         if(isset($finished)) {
-            $db -> update_task($taskID, $finished);
+            $db -> update_task_state($taskID, $finished);
         }
     }
 }

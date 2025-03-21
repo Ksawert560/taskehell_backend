@@ -145,25 +145,25 @@ class Database {
     }
 
     public function update_task_state($task_id, $state) {
-        $stmt = $this->conn->prepare("UPDATE tasks SET finished = ? WHERE id = ?");
+        $stmt = $this -> conn -> prepare("UPDATE tasks SET finished = ? WHERE id = ?");
         $stmt->bind_param("ii", $state, $task_id);
 
-        if ($stmt->execute() && $stmt->affected_rows > 0) 
+        if ($stmt -> execute() && $stmt -> affected_rows > 0) 
             sendResponse(200, ["message" => "Resource updated"], false);
-        else sendResponse("Resources not found", $exit=false);
+        else sendResponse("Resource not found", $exit=false);
 
-        $stmt->close();
+        $stmt -> close();
     }
 
     public function update_task_content($task_id, $task) {
-        $stmt = $this->conn->prepare("UPDATE tasks SET task = ? WHERE id = ?");
-        $stmt->bind_param("is", $state, $task);
+        $stmt = $this -> conn -> prepare("UPDATE tasks SET task = ? WHERE id = ?");
+        $stmt -> bind_param("si", $task, $task_id);
 
-        if ($stmt->execute() && $stmt->affected_rows > 0) 
+        if ($stmt -> execute() && $stmt -> affected_rows > 0) 
             sendResponse(200, ["message" => "Resource updated"], false);
-        else sendResponse("Resources not found", $exit=false);
+        else sendResponse("Resource not found", $exit=false);
 
-        $stmt->close();
+        $stmt -> close();
     }
 
     public function return_tasks($user_id, $state_filter = null) {
