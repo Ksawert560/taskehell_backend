@@ -21,171 +21,380 @@ class Database {
             $this -> name
         );
 
-        if ($this -> conn -> connect_error) 
-            sendResponse(
-                500,
-                [
-                    "success" => false,
-                    "error" => "Connection failed: " . $this -> conn -> connect_error
-                ]
-            );
+        if ($this -> conn -> connect_error)
+            HttpResponse::fromStatus(['error' => "Connection failed: " . $this->conn->connect_error], 500);
     }
 
     public function disconnect() {
-        if ($this -> conn) {
+        if (isset($this -> conn) && $this -> conn instanceof mysqli) {
             $this -> conn -> close();
-        }
+            $this -> conn = null;
+        } else
+            HttpResponse::fromStatus(['error' => "No active connection to close."], 400);
     }
 
     /* USERS */
-    public function register_user($username, $password){
+
+    public function register_user($username, $password) {
         $stmt = $this -> conn -> prepare("INSERT INTO users (username, password) VALUES (?, ?)");
         $stmt -> bind_param("ss", $username, $password);
 
-        if ($stmt -> execute()) {
-            $user_id = $this -> conn -> insert_id;
-            sendResponse(201, [
-                "message" => "Resource created",
-                "user_id" => $user_id
-            ], false);
-        } else
-            sendResponse(409, ["error" => $stmt->error], false);
-
-        $stmt -> close();
+        try {
+            if ($stmt -> execute()) {
+                return $this -> conn -> insert_id;
+            }
+        } catch (mysqli_sql_exception $e) {
+            if (strpos($e -> getMessage(), 'Duplicate') !== false)
+                HttpResponse::fromStatus(['error' => "Username already exists."], 409);
+    
+            HttpResponse::fromStatus(['error' => "Registration failed: " . $e->getMessage()], 500);
+        } finally {
+            $stmt -> close();
+        }
     }
 
+    public function get_user_by_username($username) {
+        $stmt = $this -> conn -> prepare("SELECT id, username, password FROM users WHERE username = ?");
+        $stmt -> bind_param("s", $username);
+    
+        try {
+            if ($stmt -> execute()) {
+                $result = $stmt -> get_result();
+                $user = $result -> fetch_assoc();
+                return $user ?: null; // return null if not found
+            }
+        } catch (mysqli_sql_exception $e) {
+            HttpResponse::fromStatus(['error' => "User lookup failed: " . $e -> getMessage()], 500);
+        } finally {
+            $stmt -> close();
+        }
+    }
+    
     public function remove_user($id) {
         $stmt = $this -> conn -> prepare("DELETE FROM users WHERE id = ?");
         $stmt -> bind_param("i", $id);
 
-        if ($stmt -> execute() && $stmt -> affected_rows > 0) 
-            sendResponse(200, ["message" => "Resource removed"], false);
-        else sendResponse('Resource not found', $exit = false);
-
-        $stmt -> close();
+        try {
+            if($stmt -> execute()) {
+                if ($stmt -> affected_rows > 0)
+                    return true;
+                else
+                    HttpResponse::fromStatus(['error' => "User not found."], 404);
+            } else
+                HttpResponse::fromStatus(['error' => "Delete failed: " . $stmt -> error], 505);
+        } finally {
+            $stmt -> close();
+        }
     }
 
-    public function update_user_username($id, $username) {
-        $stmt = $this -> conn -> prepare("UPDATE users SET username = ? WHERE id = ?");
-        $stmt -> bind_param("si", $username, $id);
+    public function update_user($id, $username = null, $password = null, $image = null) {
+        $fields = [];
+        $params = [];
+        $types = "";
 
-        if ($stmt -> execute() && $stmt -> affected_rows > 0)
-            sendResponse(200, ["message" => "Resource updated"], false);
-        else sendResponse('Resource not found', $exit = false);
+        if($username !== null) {
+            $fields[] = "username = ?";
+            $params[] = $username;
+            $types .= "s";
+        }
 
-        $stmt -> close();
+        if($password !== null) {
+            $fields[] = "password = ?";
+            $params[] = $password;
+            $types .= "s";
+        }
+    
+        if($image !== null) {
+            $fields[] = "image = ?";
+            $params[] = $image;
+            $types .= "s";
+        }
+
+        if(empty($fields))
+            HttpResponse::fromStatus(['error' => "No fields provided to update."], 400);
+
+        $query = "UPDATE users SET " . implode(", ", $fields) . " WHERE id = ?";
+        $params[] = $id;
+        $types .= "i";
+
+        $stmt = $this -> conn -> prepare($query);
+
+        try {
+            $stmt -> bind_param($types, ...$params);
+
+            if($stmt -> execute()) {
+                if($stmt -> affected_rows > 0)
+                    return true;
+                else
+                    HttpResponse::fromStatus(['error' => "User not found or no changes made."], 404);
+            } else
+                HttpResponse::fromStatus(['error' => "Update failed: " . $stmt -> error]. 500);
+        } finally {
+            $stmt -> close();
+        }
     }
 
-    public function update_user_password($id, $password) {
-        $stmt = $this -> conn -> prepare("UPDATE users SET password = ? WHERE id = ?");
-        $stmt -> bind_param("si", $password, $id);
+    /* LISTS */
 
-        if ($stmt->execute() && $stmt->affected_rows > 0) 
-            sendResponse(200, ["message" => "Resource updated"], false);
-        else sendResponse('Resource not found', $exit = false);
+    public function add_list($user_id) {
+        $stmt = $this -> conn -> prepare("INSERT INTO lists (user_id) VALUES (?)");
 
-        $stmt->close();
+        try {
+            $stmt -> bind_param("i", $user_id);
+
+            if ($stmt -> execute())
+                return $this -> conn -> insert_id;
+            else
+                HttpResponse::fromStatus(['error' => "Insert failed: " . $stmt->error], 500);
+        } finally {
+            $stmt->close();
+        }
     }
 
-    public function get_user_by_username($username) {
-        $stmt = $this->conn->prepare("SELECT id, username, password FROM users WHERE username = ? LIMIT 1");
-        $stmt->bind_param("s", $username);
-        $stmt->execute();
-        
-        $result = $stmt->get_result();
-        $user = $result->fetch_assoc();
-        
-        $stmt->close();
-        return $user;
+    public function remove_list($list_id) {
+        $stmt = $this -> conn -> prepare("DELETE FROM lists WHERE id = ?");
+
+        try {
+            $stmt -> bind_param("i", $list_id);
+
+            if($stmt -> execute()) {
+                if($stmt -> affected_rows > 0)
+                    return true;
+                else
+                    HttpResponse::fromStatus(['error' => "List not found."], 404);
+            } else
+                HttpResponse::fromStatus(['error' => "Delete failed: " . $stmt->error], 500);
+        } finally {
+            $stmt->close();
+        }
+    }
+
+    public function get_lists_by_user($user_id) {
+        $stmt = $this -> conn -> prepare("SELECT id FROM lists WHERE user_id = ?");
+
+        try {
+            $stmt -> bind_param("i", $user_id);
+
+            if($stmt -> execute()) {
+                $result = $stmt -> get_result();
+                $lists = [];
+
+                while ($row = $result -> fetch_assoc())
+                    $lists[] = $row;
+
+                return $lists;
+            } else
+                HttpResponse::fromStatus(['error' => "Query failed: " . $stmt->error], 500);
+        } finally {
+            $stmt->close();
+        }
+    }
+
+    public function is_list_owned_by_user($list_id, $user_id) {
+        $stmt = $this -> conn -> prepare("SELECT id FROM lists WHERE id = ? AND user_id = ?");
+    
+        try {
+            $stmt -> bind_param("ii", $list_id, $user_id);
+    
+            if ($stmt->execute()) {
+                $result = $stmt -> get_result();
+                return $result -> num_rows > 0;
+            } else {
+                HttpResponse::fromStatus(['error' => "Ownership check failed: " . $stmt->error], 500);
+            }
+        } finally {
+            $stmt -> close();
+        }
     }
 
     /* TASKS */
-    public function register_task($user_id, $task, $due = null) {
-        if ($due === null) {
-            $stmt = $this->conn->prepare("INSERT INTO tasks (user_id, task, due) VALUES (?, ?, NULL)");
-            $stmt->bind_param("is", $user_id, $task);
-        } else {
-            $stmt = $this->conn->prepare("INSERT INTO tasks (user_id, task, due) VALUES (?, ?, ?)");
-            $stmt->bind_param("iss", $user_id, $task, $due);
+    public function add_task($list_id, $task, $due = null, $random = 0) {
+        $stmt = $this -> conn -> prepare("INSERT INTO tasks (list_id, task, due, random) VALUES (?, ?, ?, ?)");
+
+        $random = ($random == 1) ? 1 : 0;
+
+        try {
+            $stmt -> bind_param("issi", $list_id, $task, $due, $random);
+
+            if($stmt -> execute())
+                return $this -> conn -> insert_id;
+            else 
+                HttpResponse::fromStatus(['error' => "Task insert failed: " . $stmt->error], 500);
+        } finally {
+            $stmt -> close();
         }
+    }
+
+    public function get_list_id_by_task($task_id) {
+        $stmt = $this -> conn -> prepare("SELECT list_id FROM tasks WHERE id = ?");
     
-        if ($stmt->execute()) sendResponse(201, "Resource created", false);
-        else sendResponse($stmt -> $error, $exit = false);
+        try {
+            $stmt -> bind_param("i", $task_id);
     
-        $stmt->close();
-    }
-
-    public function register_random_task($user_id) {
-        $verb_result = $this->conn->query("SELECT verb FROM verbs ORDER BY RAND() LIMIT 1");
-        $verb = $verb_result->fetch_assoc()['verb'];
-
-        $noun_result = $this->conn->query("SELECT noun FROM nouns ORDER BY RAND() LIMIT 1");
-        $noun = $noun_result->fetch_assoc()['noun'];
-
-        $task = ucfirst($verb) . " a " . $noun;
-
-        $stmt = $this->conn->prepare("INSERT INTO tasks (user_id, task) VALUES (?, ?)");
-        $stmt->bind_param("is", $user_id, $task);
-
-        if ($stmt->execute()) sendResponse(201, "Resource created", false); 
-        else sendResponse($stmt -> $error, $exit = false);
-
-        $stmt->close();
-    }
-
-    public function remove_task($user_id, $task_id) {
-        $stmt = $this->conn->prepare("DELETE FROM tasks WHERE id = ? AND user_id = ?");
-        $stmt->bind_param("ii", $task_id, $user_id);
-
-        if ($stmt->execute() && $stmt->affected_rows > 0) 
-            sendResponse(200, ["message" => "Resource removed"], false);
-        else sendResponse("Resource not found", $exit=false);
-
-        $stmt->close();
-    }
-
-    public function update_task_state($task_id, $state) {
-        $stmt = $this -> conn -> prepare("UPDATE tasks SET finished = ? WHERE id = ?");
-        $stmt->bind_param("ii", $state, $task_id);
-
-        if ($stmt -> execute() && $stmt -> affected_rows > 0) 
-            sendResponse(200, ["message" => "Resource updated"], false);
-        else sendResponse("Resource not found", $exit=false);
-
-        $stmt -> close();
-    }
-
-    public function update_task_content($task_id, $task) {
-        $stmt = $this -> conn -> prepare("UPDATE tasks SET task = ? WHERE id = ?");
-        $stmt -> bind_param("si", $task, $task_id);
-
-        if ($stmt -> execute() && $stmt -> affected_rows > 0) 
-            sendResponse(200, ["message" => "Resource updated"], false);
-        else sendResponse("Resource not found", $exit=false);
-
-        $stmt -> close();
-    }
-
-    public function return_tasks($user_id, $state_filter = null) {
-        if (is_null($state_filter)) {
-            $stmt = $this->conn->prepare("SELECT * FROM tasks WHERE user_id = ?");
-            $stmt->bind_param("i", $user_id);
-        } else {
-            $stmt = $this->conn->prepare("SELECT * FROM tasks WHERE user_id = ? AND finished = ?");
-            $stmt->bind_param("ii", $user_id, $state_filter);
-        }
-
-        if ($stmt->execute()) {
-            $result = $stmt->get_result();
-            $tasks = [];
-            while ($row = $result->fetch_assoc()) {
-                $tasks[] = $row;
+            if ($stmt -> execute()) {
+                $result = $stmt -> get_result();
+                $row = $result -> fetch_assoc();
+    
+                return $row ? $row['list_id'] : null;
+            } else {
+                HttpResponse::fromStatus(['error' => "Query failed: " . $stmt -> error], 500);
             }
+        } finally {
+            $stmt -> close();
+        }
+    
+        return null;
+    }
 
-            sendResponse(200, ["tasks" => $tasks], false);
-        } else sendResponse(400, ["error" => $stmt->error], false);
+    public function remove_task($task_id) {
+        $stmt = $this -> conn -> prepare("DELETE FROM tasks WHERE id = ?");
 
-        $stmt->close();
+        try {
+            $stmt -> bind_param("i", $task_id);
+
+            if($stmt -> execute()) {
+                if($stmt -> affected_rows > 0)
+                    return true;
+                else
+                    HttpResponse::fromStatus(['error' => "Task not found"], 404);
+            } else
+                HttpResponse::fromStatus(['error' => "Delete failed: " . $stmt -> error], 500);
+        } finally {
+            $stmt -> close();
+        }
+    }
+
+    public function update_task($task_id, $task = null, $finished = null) {
+        $fields = [];
+        $params = [];
+        $types = "";
+
+        if($task !== null) {
+            $fields[] = "task = ?";
+            $params[] = $task;
+            $types .= "s";
+        }
+
+        if($finished !== null) {
+            $finished = ($finished == 1) ? 1 : 0;
+            $fields[] = "finished = ?";
+            $params[] = $finished;
+            $types .= "i";
+        }
+
+        if(empty($fields))
+            HttpResponse::fromStatus(['error' => "No fields provided to update"], 400);
+
+        $query = "UPDATE tasks SET " . implode(", ", $fields) . " WHERE id = ?";
+        $params[] = $task_id;
+        $types .= "i";
+
+        $stmt = $this -> conn -> prepare($query);
+
+        try {
+            $stmt -> bind_param($types, ...$params);
+
+            if($stmt -> execute()) {
+                if($stmt -> affected_rows > 0)
+                    return true;
+                else
+                    HttpResponse::fromStatus(['error' => "Task not found or no changes made."], 404);
+            } else
+                HttpResponse::fromStatus(['error' => "Update failed: " . $stmt -> error], 500);
+        } finally {
+            $stmt -> close();
+        }
+    }
+
+    // public function is_task_random($task_id) {
+    //     $stmt = $this->conn->prepare("SELECT random FROM tasks WHERE id= ?");
+
+    //     try {
+    //         $stmt->bind_param("i", $task_id);
+            
+    //         if($stmt->execute()) {
+    //             $result = $stmt->get_result();
+    //             if($row = $result->fetch_assoc())
+    //                 return (bool) $row['random'];
+    //             else
+    //                 throw new HttpResponse(404, ['error' => "Task not found"]);
+    //         } else
+    //             throw new HttpResponse(500, ['error' => "Query failed: " . $stmt->error]);
+    //     } finally {
+    //         $stmt->close();
+    //     }
+    // }
+
+    public function get_tasks_by_list($list_id, $filter_finished = null, $filter_random = null) {
+        $query = "SELECT * FROM tasks WHERE list_id = ?";
+        $params = [$list_id];
+        $types = "i";
+
+        if($filter_finished !== null) {
+            $filter_finished = ($filter_finished == 1) ? 1 : 0;
+            $query .= " AND finished = ?";
+            $params[] = $filter_finished;
+            $types .= "i";
+        }
+
+        if($filter_random !== null) {
+            $filter_random = ($filter_random == 1) ? 1 : 0;
+            $query .= " AND random = ?";
+            $params[] = $filter_random;
+            $types .= "i";
+        }
+
+        $stmt = $this -> conn -> prepare($query);
+
+        try {
+            $stmt -> bind_param($types, ...$params);
+
+            if($stmt -> execute()) {
+                $result = $stmt -> get_result();
+                $tasks = [];
+
+                while($row = $result -> fetch_assoc())
+                    $tasks[] = $row;
+
+                return $tasks;
+            } else
+                HttpResponse::fromStatus(['error' => "Query failed: " . $stmt -> error], 500);
+        } finally {
+            $stmt -> close();
+        }
+    }
+
+    public function generate_random_task() {
+        $noun_stmt = $this -> conn -> prepare("SELECT noun FROM nouns ORDER BY RAND() LIMIT 1");
+        $verb_stmt = $this -> conn -> prepare("SELECT verb FROM verbs ORDER BY RAND() LIMIT 1");
+
+        try {
+            $noun = null;
+            $verb = null;
+
+            if($noun_stmt -> execute()){
+                $result = $noun_stmt -> get_result();
+                if($row = $result -> fetch_assoc())
+                    $noun = $row['noun'];
+                else
+                    HttpResponse::fromStatus(['error' => "No noun found"], 500);
+            } else
+                HttpResponse::fromStatus(['error' => "Noun query failed: " . $noun_stmt->error], 500);
+
+            if($verb_stmt->execute()){
+                $result = $verb_stmt -> get_result();
+                if($row = $result -> fetch_assoc())
+                    $verb = $row['verb'];
+                else
+                    HttpResponse::fromStatus(['error' => "No verb found."]. 500);
+            } else
+                HttpResponse::fromStatus(['error' => "Verb query failed: " . $verb_stmt->error], 500);
+
+            return ucfirst($verb) . " a " . $noun;
+        } finally {
+            $noun_stmt->close();
+            $verb_stmt->close();
+        }
     }
 }
 ?>

@@ -1,56 +1,87 @@
-CREATE DATABASE IF NOT EXISTS taskhell CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
-USE taskhell;
+-- Create the database
+CREATE DATABASE IF NOT EXISTS `taskhell` 
+  CHARACTER SET utf8mb4 
+  COLLATE utf8mb4_general_ci;
 
+USE `taskhell`;
+
+-- Create nouns table
 CREATE TABLE IF NOT EXISTS `nouns` (
-  `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT,
-  `noun` varchar(150) COLLATE utf8mb4_general_ci NOT NULL,
+  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `noun` VARCHAR(150) COLLATE utf8mb4_general_ci NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB 
+  DEFAULT CHARSET=utf8mb4 
+  COLLATE=utf8mb4_general_ci;
 
 INSERT INTO `nouns` (`id`, `noun`) VALUES
-(21, 'chair'),
-(22, 'phone'),
-(23, 'cup'),
-(24, 'desk'),
-(25, 'glass'),
-(26, 'key'),
-(27, 'pen'),
-(28, 'shirt'),
-(29, 'plate'),
-(30, 'wallet');
+  (1, 'chair'),
+  (2, 'phone'),
+  (3, 'cup'),
+  (4, 'desk'),
+  (5, 'glass'),
+  (6, 'key'),
+  (7, 'pen'),
+  (8, 'shirt'),
+  (9, 'plate'),
+  (10, 'wallet');
 
-CREATE TABLE IF NOT EXISTS `users` (
-  `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT,
-  `username` varchar(256) COLLATE utf8mb4_general_ci NOT NULL UNIQUE,
-  `password` varchar(256) COLLATE utf8mb4_general_ci NOT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
-CREATE TABLE IF NOT EXISTS `tasks` (
-  `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT,
-  `user_id` bigint UNSIGNED NOT NULL,
-  `task` varchar(512) COLLATE utf8mb4_general_ci NOT NULL,
-  `due` datetime DEFAULT NULL,
-  `finished` tinyint(1) NOT NULL DEFAULT '0',
-  PRIMARY KEY (`id`),
-  KEY `usertasks_FK` (`user_id`),
-  CONSTRAINT `fk_user_task` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
+-- Create verbs table
 CREATE TABLE IF NOT EXISTS `verbs` (
-  `id` bigint NOT NULL AUTO_INCREMENT,
-  `verb` varchar(150) COLLATE utf8mb4_general_ci NOT NULL,
+  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `verb` VARCHAR(150) COLLATE utf8mb4_general_ci NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB 
+  DEFAULT CHARSET=utf8mb4 
+  COLLATE=utf8mb4_general_ci;
 
 INSERT INTO `verbs` (`id`, `verb`) VALUES
-(1, 'clean'),
-(2, 'hide'),
-(3, 'check'),
-(4, 'find'),
-(5, 'move'),
-(6, 'go out with'),
-(7, 'rotate'),
-(8, 'don\'t think about'),
-(9, 'wash'),
-(10, 'organize');
+  (1, 'clean'),
+  (2, 'hide'),
+  (3, 'check'),
+  (4, 'find'),
+  (5, 'move'),
+  (6, 'go out with'),
+  (7, 'rotate'),
+  (8, 'don\'t think about'),
+  (9, 'wash'),
+  (10, 'organize');
+
+-- Create users table
+CREATE TABLE IF NOT EXISTS `users` (
+  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `username` VARCHAR(256) COLLATE utf8mb4_general_ci NOT NULL UNIQUE,
+  `password` VARCHAR(256) COLLATE utf8mb4_general_ci NOT NULL,
+  `image` VARCHAR(256) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB 
+  DEFAULT CHARSET=utf8mb4 
+  COLLATE=utf8mb4_general_ci;
+
+-- Create lists table
+CREATE TABLE IF NOT EXISTS `lists` (
+  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `user_id` BIGINT UNSIGNED NOT NULL,
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_user_list` 
+    FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) 
+    ON DELETE CASCADE
+) ENGINE=InnoDB 
+  DEFAULT CHARSET=utf8mb4 
+  COLLATE=utf8mb4_general_ci;
+
+-- Create tasks table
+CREATE TABLE IF NOT EXISTS `tasks` (
+  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `list_id` BIGINT UNSIGNED NOT NULL,
+  `task` VARCHAR(512) COLLATE utf8mb4_general_ci NOT NULL,
+  `due` DATETIME DEFAULT NULL,
+  `finished` TINYINT(1) NOT NULL DEFAULT 0,
+  `random` TINYINT(1) NOT NULL DEFAULT 0,
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_list_task` 
+    FOREIGN KEY (`list_id`) REFERENCES `lists` (`id`) 
+    ON DELETE CASCADE
+) ENGINE=InnoDB 
+  DEFAULT CHARSET=utf8mb4 
+  COLLATE=utf8mb4_general_ci;

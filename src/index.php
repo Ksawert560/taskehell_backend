@@ -1,37 +1,73 @@
 <?php
-header("Access-Control-Allow-Origin: *");
-header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
-header("Access-Control-Allow-Headers: Content-Type, Authorization");
+require_once __DIR__.'/utils/http_response.php';
+require_once __DIR__.'/db.php';
 
-// Handle preflight requests (OPTIONS method)
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    http_response_code(200);
-    exit();
+try {
+    $db = new Database(
+        'mysql',
+        $_SERVER['MYSQL_USER'],
+        $_SERVER['MYSQL_PASSWORD'],
+        $_SERVER['MYSQL_DATABASE'],
+    );
+
+    $db -> connect();
+
+    $response = require __DIR__.'/endpoint_router.php';
+
+    $response -> respond();
+} catch (HttpResponse $response) {
+    $response -> respond();
+} finally {
+    try {
+        $db -> disconnect();
+    } catch(HttpResponse $response) {
+        $response -> respond();
+    }
 }
 
-require "vendor/autoload.php";
-require "db.php";
-require "endpoints.php";
-require "utils.php";
 
-$dotenv = Dotenv\Dotenv::createImmutable(__DIR__);
-$dotenv->safeLoad();
 
-$db = new Database(
-    'mysql',
-    $_ENV['MYSQL_USER'] ?? 'root',
-    $_ENV['MYSQL_PASSWORD'] ?? 'rootpassword',
-    $_ENV['MYSQL_DATABASE'] ?? 'taskhell'
-);
 
-$pepper = $ENV['PEPPER'] ?? 'basicpepper';
 
-$db -> connect();
 
-$segments = return_segments();
+// declare(strict_types=1);
+// require_once __DIR__.'/cors.php';
+// require_once __DIR__.'/http_response.php';
+// require_once __DIR__.'/config.php';
+// require_once __DIR__.'/db.php';
 
-resolve_endpoints($segments, $db, $pepper);
+// $db = new Database(
+//     'mysql',
+//     $env['DB_USER'],
+//     $env['DB_PASS'],
+//     $env['DB_NAME']
+// );
 
-$db -> disconnect();
-
+// try {
+//     $db->connect();
+    
+//     // Get the response from routing
+//     $response = require __DIR__.'/endpoint_router.php';
+    
+//     // Handle returned responses
+//     if ($response instanceof HttpResponse) {
+//         $response->send();
+//     }
+    
+//     // If we get here, no valid response was returned
+//     throw new HttpResponse(500, ['error' => 'Invalid endpoint implementation']);
+// } catch (HttpResponse $e) {
+//     // Handle thrown responses
+//     $e->send();
+// } catch (Throwable $e) {
+//     // Handle unexpected errors
+//     error_log("System error: " . $e->getMessage());
+//     (new HttpResponse(500, ['error' => 'Internal server error']))->send();
+// } finally {
+//     try {
+//         $db->disconnect();
+//     } catch (Exception $e) {
+//         error_log("Disconnection error: " . $e->getMessage());
+//     }
+// }
 ?>
