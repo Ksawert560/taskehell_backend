@@ -23,5 +23,5 @@ if (!password_verify($pepperedPassword, $user['password']))
 $payload = ['id' => $user['id']];
 $jwt = generate_jwt($payload);
 
-return HttpResponse::fromStatus(['token' => $jwt, 'message' => $user['id']], 200);
+return HttpResponse::fromStatus(['message' => 'logged in successfully', 'token' => $jwt], 200);
 ?>

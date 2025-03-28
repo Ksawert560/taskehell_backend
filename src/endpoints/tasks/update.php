@@ -24,9 +24,9 @@ if(!empty($errors)) HttpResponse::fromStatus(['errors'=> $errors], 400);
 $list_id = $db -> get_list_id_by_task($task_id);
 
 if(!$db -> is_list_owned_by_user($list_id, $user_id))
-    HttpResponse::fromStatus(['error' => "List not owned by the user"], 403);
+    HttpResponse::fromStatus(['error' => "list not owned by the user"], 403);
 
 $db -> update_task($task_id, $task, $finished);
 
-return HttpResponse::fromStatus(['message' => 'Task updated successfully'], 200);
+return HttpResponse::fromStatus(['message' => 'task updated successfully'], 200);
 ?>

@@ -5,12 +5,12 @@ $task = $data['task'] ?? null;
 $list_id = $data['list id'] ?? null;
 $date = $data['due'] ?? null;
 
-$taskErrors = validate("Task", $task, array_merge($VALIDATION_RULES['task'], ['required']));
+$taskErrors = validate("task", $task, array_merge($VALIDATION_RULES['task'], ['required']));
 $listErrors = validate('id', $list_id, $VALIDATION_RULES['id']);
 $errors = array_merge($taskErrors, $listErrors);
 
 if(isset($date)) {
-    $dateErrors = validate("Date", $date, $VALIDATION_RULES['datetime']);
+    $dateErrors = validate("due", $date, $VALIDATION_RULES['datetime']);
     $errors = array_merge($taskErrors, $dateErrors);
 }
 

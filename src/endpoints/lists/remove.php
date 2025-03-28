@@ -8,8 +8,8 @@ $listErrors = validate('id', $list_id, $VALIDATION_RULES['id']);
 if(!empty($listErrors)) HttpResponse::fromStatus(['errors' => $listErrors], 400);
 
 if(!$db -> is_list_owned_by_user($list_id, $user_id))
-    HttpResponse::fromStatus(['error' => "List not owned by the user"], 403);
+    HttpResponse::fromStatus(['error' => "list not owned by the user"], 403);
 
 $db -> remove_list($list_id);
-return HttpResponse::fromStatus(["msg" => "List removed successfully"], 200);
+return HttpResponse::fromStatus(["message" => "list removed successfully"], 200);
 ?>

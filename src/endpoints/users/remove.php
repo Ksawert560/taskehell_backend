@@ -1,4 +1,4 @@
 <?php
     $db -> remove_user($user_id);
-    return HttpResponse::fromStatus(["msg" => "User removed successfully"], 200);
+    return HttpResponse::fromStatus(["message" => "user removed successfully"], 200);
 ?>
