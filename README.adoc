@@ -53,15 +53,18 @@ Proposed ports are:
 
 You will find all the available routes and logic in `endpoints.php`:
 
+* `POST /login` → Credentials validation 
 * `PUT /users` → User registration
-* `POST /login` → Credentials validation
-* `POST /users/:userID/tasks` → Task registration
-* `POST /users/:userID/tasks/random` → Random task registration
-* `PATCH /users/:userID` → User data update
-* `PATCH /users/:userID/tasks/:taskID` → Task data update
-* `GET /users/:userID/tasks?finished=[true/false]` → Return all user tasks (filtered by status)
-* `DELETE /users/:userID` → User removal
-* `DELETE /users/:userID/tasks/:taskID` → Task removal
+* `PUT /lists` → List registration
+* `PUT /tasks` → Task registration
+* `PUT /tasks/random` → Random task registration
+* `PATCH /users` → User data update
+* `PATCH /tasks` → Task data update
+* `GET /lists` → Return all lists owned by a given user
+* `GET /tasks?finished=[0/1]?random=[0/1]` → Return all tasks from a given list (filtered by status and or if they were randomly generated)
+* `DELETE /users` → User removal
+* `DELETE /lists` → List removal
+* `DELETE /tasks` → Task removal
 
 == Notes
 
