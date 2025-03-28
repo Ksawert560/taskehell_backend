@@ -69,6 +69,23 @@ class Database {
             $stmt -> close();
         }
     }
+
+    public function user_exists($id) {
+        $stmt = $this -> conn -> prepare("SELECT id FROM users WHERE id = ?");
+    
+        try {
+            $stmt -> bind_param("i", $id);
+    
+            if ($stmt -> execute()) {
+                $result = $stmt -> get_result();
+                return $result -> num_rows > 0;
+            } else {
+                HttpResponse::fromStatus(['error' => "User existence check failed: " . $stmt->error], 500);
+            }
+        } finally {
+            $stmt -> close();
+        }
+    }
     
     public function remove_user($id) {
         $stmt = $this -> conn -> prepare("DELETE FROM users WHERE id = ?");

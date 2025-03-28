@@ -32,7 +32,7 @@ function decode_jwt(string $token): stdClass {
     }
 }
 
-function authenticate_jwt(): int {
+function authenticate_jwt($db): int {
     $headers = getallheaders();
     $authHeader = $headers['Authorization'] ?? $headers['authorization'] ?? '';
     
@@ -44,13 +44,16 @@ function authenticate_jwt(): int {
     
     try {
         $decoded = decode_jwt($matches['token'], $_SERVER['JWT_SECRET']);
-        
-        // WE SHOULD VERIFY IF THE USER EXISTS
 
-        if (!property_exists($decoded, 'id') || !is_numeric($decoded->id))
+        if (!property_exists($decoded, 'id') || !is_numeric($decoded -> id))
             HttpResponse::fromStatus(['error' => 'Invalid token payload'], 401);
         
-        return (int)$decoded->id;
+        $user_id = (int)$decoded->id;
+
+        if ($db -> user_exists($user_id))
+            return $user_id;
+        else HttpResponse::fromStatus(['error' => 'User doesn\'t exists'], 403);
+
     } catch (Exception $e) {
         HttpResponse::fromStatus(['error' => 'Authentication failed'], 500);
     }
