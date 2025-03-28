@@ -61,7 +61,7 @@ You will find all the available routes and logic in `endpoints.php`:
 * `PATCH /users` → User data update
 * `PATCH /tasks` → Task data update
 * `GET /lists` → Return all lists owned by a given user
-* `GET /tasks?finished=[0/1]?random=[0/1]` → Return all tasks from a given list (filtered by status and or if they were randomly generated)
+* `GET /tasks?finished=[0/1]&random=[0/1]` → Return all tasks from a given list (filtered by status and or if they were randomly generated)
 * `DELETE /users` → User removal
 * `DELETE /lists` → List removal
 * `DELETE /tasks` → Task removal
