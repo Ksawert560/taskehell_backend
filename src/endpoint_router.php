@@ -43,6 +43,11 @@ switch ($route) {
         $response = require __DIR__ . '/endpoints/users/update.php';
         break;
 
+    case 'GET|users':
+        $user_id = authenticate_jwt($db, false);
+        $response = require __DIR__ . '/endpoints/users/return.php';
+        break;
+
     case 'DELETE|users':
         $user_id = authenticate_jwt($db, false);
         $response = require __DIR__ . '/endpoints/users/remove.php';

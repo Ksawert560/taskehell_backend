@@ -127,6 +127,23 @@ class Database {
         }
     }
 
+    public function get_username($user_id) {
+        $stmt = $this -> conn -> prepare("SELECT username FROM users WHERE id = ?");
+        $stmt -> bind_param("i", $user_id);
+    
+        try {
+            if ($stmt -> execute()) {
+                $result = $stmt -> get_result();
+                $user = $result -> fetch_assoc();
+                return $user ?: null;
+            }
+        } catch (mysqli_sql_exception $e) {
+            HttpResponse::fromStatus(['error' => "User lookup failed: " . $e -> getMessage()], 500);
+        } finally {
+            $stmt -> close();
+        }
+    }
+
     public function user_exists($id) {
         $stmt = $this -> conn -> prepare("SELECT id FROM users WHERE id = ?");
     
