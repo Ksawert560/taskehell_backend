@@ -17,9 +17,9 @@ if(isset($date)) {
 if (!empty($errors)) HttpResponse::fromStatus(['errors' => $errors], 400);
 
 if(!$db -> is_list_owned_by_user($list_id, $user_id))
-    HttpResponse::fromStatus(['error' => "List not owned by the user"], 403);
+    HttpResponse::fromStatus(['error' => "list not owned by the user"], 403);
 
 $task_id = $db -> add_task($list_id, $task, $date);
 
-return HttpResponse::fromStatus(['message' => 'Task registered successfully', 'task id' => $task_id], 201);
+return HttpResponse::fromStatus(['message' => 'task registered successfully', 'task id' => $task_id], 201);
 ?>

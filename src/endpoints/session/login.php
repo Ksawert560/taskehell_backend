@@ -15,13 +15,21 @@ $user = $db->get_user_by_username($username);
 if (!$user || !isset($user['password']) || !is_string($user['password'])) 
     HttpResponse::fromStatus(['error' => 'Invalid credentials'], 401);
 
-$pepperedPassword = hash_hmac("sha256", $password, $_SERVER['PEPPER']);
+$pepperedPassword = hash_hmac("sha256", $password, $_SERVER['PEPPER_PASSWORD']);
 
 if (!password_verify($pepperedPassword, $user['password']))
     HttpResponse::fromStatus(['error' => 'Invalid credentials'], 401);
  
 $payload = ['id' => $user['id']];
-$jwt = generate_jwt($payload);
+$jwt_session = generate_jwt($payload, false);
+$jwt_refresh = generate_jwt($payload, true);
 
-return HttpResponse::fromStatus(['message' => 'logged in successfully', 'token' => $jwt], 200);
+$hashedJwt = hashMessage($jwt_refresh, true);
+$db -> update_refresh_token($user['id'], $hashedJwt);
+
+return HttpResponse::fromStatus([
+    'message' => 'logged in successfully',
+    'session token' => $jwt_session,
+    'refresh token' => $jwt_refresh
+], 200);
 ?>

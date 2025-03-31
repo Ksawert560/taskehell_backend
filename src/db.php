@@ -53,6 +53,63 @@ class Database {
         }
     }
 
+    public function update_refresh_token($id, $refresh_token) {
+        $stmt = $this->conn->prepare("UPDATE users SET refresh_token = ? WHERE id = ?");
+    
+        try {
+            $stmt->bind_param("si", $refresh_token, $id);
+    
+            if ($stmt->execute()) {
+                if ($stmt->affected_rows > 0) {
+                    return true;
+                } else {
+                    HttpResponse::fromStatus(['error' => "User not found or refresh token unchanged."], 404);
+                }
+            } else {
+                HttpResponse::fromStatus(['error' => "Refresh token update failed: " . $stmt->error], 500);
+            }
+        } finally {
+            $stmt->close();
+        }
+    }
+    
+    public function delete_refresh_token($id) {
+        $stmt = $this->conn->prepare("UPDATE users SET refresh_token = NULL WHERE id = ?");
+    
+        try {
+            $stmt->bind_param("i", $id);
+    
+            if ($stmt->execute()) {
+                if ($stmt->affected_rows > 0) {
+                    return true;
+                } else {
+                    HttpResponse::fromStatus(['error' => "User not found or refresh token already removed."], 404);
+                }
+            } else {
+                HttpResponse::fromStatus(['error' => "Refresh token deletion failed: " . $stmt->error], 500);
+            }
+        } finally {
+            $stmt->close();
+        }
+    }
+
+    public function get_refresh_token($id) {
+        $stmt = $this -> conn -> prepare("SELECT refresh_token FROM users WHERE id = ?");
+        $stmt -> bind_param("i", $id);
+    
+        try {
+            if ($stmt -> execute()) {
+                $result = $stmt -> get_result();
+                $token = $result -> fetch_assoc();
+                return $token ?: null;
+            }
+        } catch (mysqli_sql_exception $e) {
+            HttpResponse::fromStatus(['error' => "Token lookup failed: " . $e -> getMessage()], 500);
+        } finally {
+            $stmt -> close();
+        }
+    }
+
     public function get_user_by_username($username) {
         $stmt = $this -> conn -> prepare("SELECT id, username, password FROM users WHERE username = ?");
         $stmt -> bind_param("s", $username);
@@ -61,7 +118,7 @@ class Database {
             if ($stmt -> execute()) {
                 $result = $stmt -> get_result();
                 $user = $result -> fetch_assoc();
-                return $user ?: null; // return null if not found
+                return $user ?: null;
             }
         } catch (mysqli_sql_exception $e) {
             HttpResponse::fromStatus(['error' => "User lookup failed: " . $e -> getMessage()], 500);

@@ -53,6 +53,7 @@ CREATE TABLE IF NOT EXISTS `users` (
   `username` VARCHAR(256) COLLATE utf8mb4_general_ci NOT NULL UNIQUE,
   `password` VARCHAR(256) COLLATE utf8mb4_general_ci NOT NULL,
   `image` VARCHAR(256) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `refresh_token` VARCHAR(512) COLLATE utf8mb4_general_ci DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB 
   DEFAULT CHARSET=utf8mb4 

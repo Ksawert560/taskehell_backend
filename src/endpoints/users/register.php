@@ -10,12 +10,20 @@ $errors = array_merge($usernameErrors, $passwordErrors);
 
 if(!empty($errors)) HttpResponse::fromStatus(['errors' => $errors], 400);
 
-$hashedPassword = hashPassword($password);
+$hashedPassword = hashMessage($password, false);
 
 $userID = $db -> register_user($username, $hashedPassword);
 
 $payload = ['id' => $userID];
-$jwt = generate_jwt($payload);
+$jwt_session = generate_jwt($payload, false);
+$jwt_refresh = generate_jwt($payload, true);
 
-return HttpResponse::fromStatus(['token' => $jwt], 201);
+$hashedJwt = hashMessage($jwt_refresh, true);
+$db -> update_refresh_token($userID, $hashedJwt);
+
+return HttpResponse::fromStatus([
+    'message' => 'user created successfully',
+    'session token' => $jwt_session,
+    'refresh token' => $jwt_refresh
+], 201);
 ?>

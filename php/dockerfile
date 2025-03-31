@@ -13,8 +13,10 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 RUN a2enmod rewrite
 
 # env passthroughs
-RUN echo "PassEnv PEPPER" >> /etc/apache2/apache2.conf \
- && echo "PassEnv JWT_SECRET" >> /etc/apache2/apache2.conf\
+RUN echo "PassEnv PEPPER_PASSWORD" >> /etc/apache2/apache2.conf \
+ && echo "PassEnv PEPPER_JWT" >> /etc/apache2/apache2.conf\
+ && echo "PassEnv JWT_SECRET_SESSION" >> /etc/apache2/apache2.conf\
+ && echo "PassEnv JWT_SECRET_REFRESH" >> /etc/apache2/apache2.conf\
  && echo "PassEnv MYSQL_DATABASE" >> /etc/apache2/apache2.conf \
  && echo "PassEnv MYSQL_PASSWORD" >> /etc/apache2/apache2.conf \
  && echo "PassEnv MYSQL_USER" >> /etc/apache2/apache2.conf \

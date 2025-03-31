@@ -1,6 +1,12 @@
 <?php
-function hashPassword(string $password): string {
-    $peppered = hash_hmac('sha256', $password, $_SERVER['PEPPER'] ?? 'basicpepper');
+function hashMessage(string $message, $isToken): string {
+    $peppered = hash_hmac(
+        'sha256',
+        $message,
+        ($isToken
+            ? $_SERVER['PEPPER_JWT']
+            : $_SERVER['PEPPER_PASSWORD'])
+            ?? 'basicpepper');
     $options = [
         'memory_cost' => 1<<17, // 128MB
         'time_cost'   => 4,
