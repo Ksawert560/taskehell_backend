@@ -62,6 +62,7 @@ CREATE TABLE IF NOT EXISTS `users` (
 -- Create lists table
 CREATE TABLE IF NOT EXISTS `lists` (
   `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `name` VARCHAR(256) COLLATE utf8mb4_general_ci NOT NULL,
   `user_id` BIGINT UNSIGNED NOT NULL,
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_user_list` 

@@ -227,16 +227,18 @@ class Database {
 
     /* LISTS */
 
-    public function add_list($user_id) {
-        $stmt = $this -> conn -> prepare("INSERT INTO lists (user_id) VALUES (?)");
+    public function add_list($user_id, $listname) {
+        $stmt = $this -> conn -> prepare("INSERT INTO lists (user_id, name) VALUES (?, ?)");
 
         try {
-            $stmt -> bind_param("i", $user_id);
+            $stmt -> bind_param("is", $user_id, $listname);
 
             if ($stmt -> execute())
                 return $this -> conn -> insert_id;
             else
                 HttpResponse::fromStatus(['error' => "Insert failed: " . $stmt->error], 500);
+        } catch (mysqli_sql_exception $e) {
+            HttpResponse::fromStatus(['error' => "List registration failed: " . $e -> getMessage()], 500);
         } finally {
             $stmt->close();
         }

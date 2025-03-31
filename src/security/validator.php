@@ -14,17 +14,22 @@ $VALIDATION_RULES = [
     ],
     'id' => [
         'id',
-        'required'
+        'required',
     ],
     'task' => [
         'max:512',
         'min:1',
     ],
+    'list' => [
+        'max:256',
+        'min:1',
+        'required',
+    ],
     'datetime' => [
-        'datetime'
+        'datetime',
     ],
     'boolean' => [
-        'boolean'
+        'boolean',
     ],
 ];
 
