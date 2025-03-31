@@ -2,7 +2,7 @@
 $VALIDATION_RULES = [
     'username' => [
         'max:256',
-        'min:4',
+        'min:1',
         'regex:/^[a-zA-Z0-9_\-@!.]+$/',
     ],
     'password' => [
