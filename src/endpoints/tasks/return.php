@@ -1,7 +1,5 @@
 <?php
-$data = json_decode(file_get_contents('php://input'), true);
-
-$list_id = $data['list id'] ?? null;
+$list_id = $_GET['list id'] ?? null;
 $finished = $_GET['finished'] ?? null;
 $random = $_GET['random'] ?? null;
 $errors = validate('id', $list_id, $VALIDATION_RULES['id']);
