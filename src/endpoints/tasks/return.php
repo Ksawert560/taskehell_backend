@@ -1,8 +1,8 @@
 <?php
-$list_id = $_GET['list id'] ?? null;
+$list_id = $_GET['list'] ?? null;
 $finished = $_GET['finished'] ?? null;
 $random = $_GET['random'] ?? null;
-$errors = validate('id', $list_id, $VALIDATION_RULES['id']);
+$errors = validate('list', $list_id, $VALIDATION_RULES['id']);
 
 if(isset($finished)) {
     $finishedErrors = validate("finished", $finished, $VALIDATION_RULES['boolean']);
