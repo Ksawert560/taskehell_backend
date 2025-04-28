@@ -263,7 +263,7 @@ class Database {
     }
 
     public function get_lists_by_user($user_id) {
-        $stmt = $this -> conn -> prepare("SELECT id FROM lists WHERE user_id = ?");
+        $stmt = $this -> conn -> prepare("SELECT id, name FROM lists WHERE user_id = ?");
 
         try {
             $stmt -> bind_param("i", $user_id);
