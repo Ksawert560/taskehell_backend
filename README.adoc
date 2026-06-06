@@ -1,25 +1,30 @@
 = Taskhell Backend
 :author: Ksawery Kucz, Miłosz Skubarczewski, Jakub Testka
-:revdate: 2025-03-21
+:revdate: 2026-06-06
 :toc: left
 
 == Description
 
-This is the **backend** for the **Taskhell** project, developed as part of the 'Internet Technologies' labs. The backend is built using PHP and provides a RESTful API for managing tasks.
+**Backend** for the **Taskhell** task management app,
+developed as part of the *'Internet Technologies'* labs,
+and further re-visited for *'Content management systems and platforms'* labs.
+Built with PHP and Apache, backed by MySQL.
+It exposes a RESTful API for user authentication and task management.
 
 == Features
 
 * REST API for task management
 * User authentication with basic security practices
 * Input validation
-* Dockerized setup with PHP, MySQL, and phpMyAdmin services
+* Fully containerized setup with PHP, MySQL, and phpMyAdmin
 
 == Technologies Used
 
-* PHP
-* MySQL
+* PHP 8.2
+* MySQL 8.0
+* Apache
 * Docker
-* Apache (via dockerized PHP service)
+* Composer
 
 == Setup
 
@@ -29,42 +34,51 @@ This is the **backend** for the **Taskhell** project, developed as part of the '
 
 === Environment Variables
 
-Create a `.env` file by following the structure provided in `example.env`.  
-Remember to set secure values for:
+Create a `.env` file by following the structure provided in the `example.env` file.  
+Remember to set random values for all secrets - you can generate them with:
+
+[source, bash]
+----
+openssl rand -hex 32
+----
+
+Required variables:
 
 * `MYSQL_ROOT_PASSWORD`
-* `MYSQL_USER_PASSWORD`
-* `PEPPER`
+* `MYSQL_USER`
+* `MYSQL_PASSWORD`
+* `MYSQL_DATABASE`
+* `PEPPER_PASSWORD`
+* `PEPPER_JWT`
+* `JWT_SECRET_SESSION`
+* `JWT_SECRET_REFRESH`
 
 === Build and Run
 
 [source,bash]
 ----
+docker compose build
 docker compose up
 ----
 
-The services will be available on the ports defined in your `.env` file.  
-Proposed ports are:
-
-* `8080` for the API
-* `8081` for phpMyAdmin
+The services will be available under the ports defined in your `.env` file.  
 
 == API Endpoints
 
 You will find all the available routes and logic in `endpoints.php`:
 
-* `POST /login` → Credentials validation 
-* `PUT /users` → User registration
-* `PUT /lists` → List registration
-* `PUT /tasks` → Task registration
-* `PUT /tasks/random` → Random task registration
-* `PATCH /users` → User data update
-* `PATCH /tasks` → Task data update
-* `GET /lists` → Return all lists owned by a given user
-* `GET /tasks?finished=[0/1]&random=[0/1]` → Return all tasks from a given list (filtered by status and or if they were randomly generated)
-* `DELETE /users` → User removal
-* `DELETE /lists` → List removal
-* `DELETE /tasks` → Task removal
+* `POST   /login`                             → Credentials validation 
+* `PUT    /users`                             → User registration
+* `PUT    /lists`                             → List registration
+* `PUT    /tasks`                             → Task registration
+* `PUT    /tasks/random`                      → Random task registration
+* `PATCH  /users`                             → User data update
+* `PATCH  /tasks`                             → Task data update
+* `GET    /lists`                             → Return all lists owned by a given user
+* `GET    /tasks?finished=[0/1]&random=[0/1]` → Return all tasks from a given list (filtered by status and or if they were randomly generated)
+* `DELETE /users`                             → User removal
+* `DELETE /lists`                             → List removal
+* `DELETE /tasks`                             → Task removal
 
 == Notes
 
